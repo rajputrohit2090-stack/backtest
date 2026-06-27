@@ -1,0 +1,2 @@
+import { Handle, Position, type NodeProps } from '@xyflow/react';
+export function BlockNode({ data, selected }: NodeProps){return <div className={`rounded-lg border bg-slate-900 px-4 py-3 shadow-xl ${selected?'border-cyan-400':'border-slate-700'}`}><Handle type="target" position={Position.Left}/><div className="text-xs uppercase text-cyan-300">{String(data.category ?? 'Block')}</div><div className="font-semibold text-white">{String(data.label ?? 'Node')}</div><Handle type="source" position={Position.Right}/></div>}
