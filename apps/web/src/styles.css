@@ -1,1 +1,1 @@
-@tailwind base;@tailwind components;@tailwind utilities;html,body,#root{height:100%}body{margin:0;background:#050914;color:#e5e7eb}.react-flow__node{font-size:12px}.react-flow__controls{background:#111827;border-color:#334155}.react-flow__controls-button{background:#111827;color:#e5e7eb;border-color:#334155}
+@import "tailwindcss";

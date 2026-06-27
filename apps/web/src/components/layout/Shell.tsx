@@ -1,3 +1,0 @@
-import { NavLink, Outlet } from 'react-router-dom';
-const links=[['/','Dashboard'],['/builder','Strategy Builder'],['/library','Strategy Library'],['/backtests','Backtests'],['/reports','Reports'],['/settings','Settings'],['/profile','User Profile']];
-export function Shell(){return <div className="flex h-screen bg-surface text-slate-100"><nav className="hidden w-64 border-r border-slate-800 bg-slate-950 p-4 md:block"><div className="mb-8 text-xl font-bold text-cyan-300">BackTest AI</div>{links.map(([to,label])=><NavLink key={to} to={to} className={({isActive})=>`mb-2 block rounded-lg px-3 py-2 ${isActive?'bg-cyan-500/15 text-cyan-200':'text-slate-400 hover:bg-slate-900'}`}>{label}</NavLink>)}</nav><section className="min-w-0 flex-1"><Outlet/></section></div>}
