@@ -1,0 +1,6 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+model User { id String @id @default(cuid()) email String @unique name String? createdAt DateTime @default(now()) updatedAt DateTime @updatedAt projects Project[] strategies Strategy[] }
+model Project { id String @id @default(cuid()) name String description String? ownerId String createdAt DateTime @default(now()) updatedAt DateTime @updatedAt owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade) strategies Strategy[] }
+model Strategy { id String @id @default(cuid()) name String description String? graph Json @default("{\"nodes\":[],\"edges\":[],\"version\":1}") ownerId String? projectId String? createdAt DateTime @default(now()) updatedAt DateTime @updatedAt owner User? @relation(fields: [ownerId], references: [id], onDelete: SetNull) project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull) versions StrategyVersion[] }
+model StrategyVersion { id String @id @default(cuid()) strategyId String version Int graph Json createdAt DateTime @default(now()) strategy Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade) @@unique([strategyId, version]) }
