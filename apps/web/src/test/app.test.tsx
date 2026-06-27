@@ -4,5 +4,5 @@ import { App } from '../app/App';
 
 it('renders the foundation landing page', () => {
   render(<App />);
-  expect(screen.getByText('BackTest AI')).toBeInTheDocument();
+  expect(screen.getByText('Login')).toBeInTheDocument();
 });

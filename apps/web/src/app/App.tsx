@@ -1,25 +1,19 @@
-import { Card } from '@backtest-ai/ui';
-import { productName } from '@backtest-ai/shared';
-
-export function App() {
-  return (
-    <main className="min-h-screen bg-slate-950 text-slate-100">
-      <section className="mx-auto flex min-h-screen max-w-5xl flex-col justify-center px-6 py-16">
-        <p className="text-sm font-semibold uppercase tracking-[0.4em] text-cyan-300">SaaS Foundation</p>
-        <h1 className="mt-6 text-5xl font-bold tracking-tight">{productName}</h1>
-        <p className="mt-6 max-w-2xl text-lg text-slate-300">
-          A production-ready monorepo foundation with React, Fastify, FastAPI, PostgreSQL, Redis, Prisma,
-          Docker, CI, health checks, and quality tooling.
-        </p>
-        <div className="mt-10 grid gap-4 md:grid-cols-3">
-          {['Web app', 'Node API', 'Python engine'].map((item) => (
-            <Card key={item}>
-              <h2 className="text-lg font-semibold text-slate-950">{item}</h2>
-              <p className="mt-2 text-sm text-slate-600">Configured and ready for product development.</p>
-            </Card>
-          ))}
-        </div>
-      </section>
-    </main>
-  );
-}
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Link, Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+const queryClient = new QueryClient();
+const password = z.string().min(12, 'Use at least 12 characters');
+const loginSchema = z.object({ email: z.string().email(), password: z.string().min(1), rememberMe: z.boolean().optional() });
+const registerSchema = loginSchema.extend({ name: z.string().min(1) });
+type AuthForm = z.infer<typeof registerSchema>;
+function token() { return localStorage.getItem('accessToken'); }
+async function api(path: string, options: RequestInit = {}) { const res = await fetch(`/api${path}`, { ...options, headers:{ 'content-type':'application/json', ...(token()?{authorization:`Bearer ${token()}`}:{}) , ...options.headers }}); if (!res.ok) throw new Error((await res.json()).message ?? 'Request failed'); return res.json(); }
+function Shell({ children }: { children: React.ReactNode }) { return <main className="min-h-screen bg-slate-950 text-slate-100"><nav className="mx-auto flex max-w-6xl gap-4 p-6"><Link to="/">BackTest AI</Link><Link to="/profile">Profile</Link><Link to="/settings">Settings</Link></nav><section className="mx-auto max-w-xl px-6 py-10">{children}</section></main>; }
+function AuthPage({ mode }: { mode:'login'|'register' }) { const { register, handleSubmit, formState:{ errors, isSubmitting } } = useForm<AuthForm>({ resolver:zodResolver(mode==='login'?loginSchema:registerSchema) }); async function onSubmit(data:AuthForm){ const body=await api(`/auth/${mode}`, { method:'POST', body:JSON.stringify(data) }); localStorage.setItem('accessToken', body.accessToken ?? ''); localStorage.setItem('refreshToken', body.refreshToken ?? ''); location.href='/profile'; } return <Shell><h1 className="text-3xl font-bold">{mode==='login'?'Login':'Create account'}</h1><form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">{mode==='register'&&<input className="input" placeholder="Name" {...register('name')} />}<input className="input" placeholder="Email" {...register('email')} /><input className="input" placeholder="Password" type="password" {...register('password')} />{mode==='login'&&<label className="flex gap-2"><input type="checkbox" {...register('rememberMe')} />Remember me</label>}<p className="text-rose-300">{Object.values(errors)[0]?.message}</p><button disabled={isSubmitting} className="btn">{isSubmitting?'Please wait…':'Submit'}</button></form><Link className="mt-4 block text-cyan-300" to={mode==='login'?'/register':'/login'}>{mode==='login'?'Register':'Login'}</Link><Link className="mt-2 block text-cyan-300" to="/forgot-password">Forgot password?</Link></Shell>; }
+function SimpleForm({ title, fields, endpoint }: { title:string; fields:string[]; endpoint:string }) { const { register, handleSubmit } = useForm<Record<string,string>>(); return <Shell><h1 className="text-3xl font-bold">{title}</h1><form className="mt-6 space-y-4" onSubmit={handleSubmit((d)=>api(endpoint,{method:'POST',body:JSON.stringify(d)}).then(()=>alert('Success')).catch((e)=>alert(e.message)))}>{fields.map(f=><input key={f} className="input" placeholder={f} type={f.toLowerCase().includes('password')?'password':'text'} {...register(f)} />)}<button className="btn">Submit</button></form></Shell>; }
+function Protected({ children }:{children:React.ReactNode}) { return token()?children:<Navigate to="/login"/>; }
+function Profile(){ return <Protected><Shell><h1 className="text-3xl font-bold">Profile</h1><p className="mt-4 text-slate-300">Manage your verified BackTest AI identity, avatar, and personal details.</p></Shell></Protected>; }
+function Settings(){ return <Protected><Shell><h1 className="text-3xl font-bold">Account Settings</h1><button className="btn mt-6" onClick={()=>api('/auth/logout',{method:'POST'}).finally(()=>{localStorage.clear(); location.href='/login';})}>Logout</button></Shell></Protected>; }
+export function App() { return <QueryClientProvider client={queryClient}><Router><Routes><Route path="/" element={<Navigate to="/login"/>}/><Route path="/login" element={<AuthPage mode="login"/>}/><Route path="/register" element={<AuthPage mode="register"/>}/><Route path="/forgot-password" element={<SimpleForm title="Forgot Password" fields={['email']} endpoint="/auth/forgot-password"/>}/><Route path="/reset-password" element={<SimpleForm title="Reset Password" fields={['token','password']} endpoint="/auth/reset-password"/>}/><Route path="/verify-email" element={<SimpleForm title="Verify Email" fields={['token']} endpoint="/auth/verify-email"/>}/><Route path="/profile" element={<Profile/>}/><Route path="/settings" element={<Settings/>}/><Route path="/unauthorized" element={<Shell><h1>Unauthorized</h1></Shell>}/><Route path="*" element={<Shell><h1>404</h1></Shell>}/></Routes></Router></QueryClientProvider>; }
