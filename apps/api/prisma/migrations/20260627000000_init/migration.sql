@@ -1,10 +1,6 @@
-CREATE TABLE "User" ("id" TEXT NOT NULL,"email" TEXT NOT NULL,"name" TEXT,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,"updatedAt" TIMESTAMP(3) NOT NULL,CONSTRAINT "User_pkey" PRIMARY KEY ("id"));
-CREATE TABLE "Project" ("id" TEXT NOT NULL,"name" TEXT NOT NULL,"description" TEXT,"ownerId" TEXT NOT NULL,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,"updatedAt" TIMESTAMP(3) NOT NULL,CONSTRAINT "Project_pkey" PRIMARY KEY ("id"));
-CREATE TABLE "Strategy" ("id" TEXT NOT NULL,"name" TEXT NOT NULL,"description" TEXT,"graph" JSONB NOT NULL DEFAULT '{"nodes":[],"edges":[],"version":1}',"ownerId" TEXT,"projectId" TEXT,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,"updatedAt" TIMESTAMP(3) NOT NULL,CONSTRAINT "Strategy_pkey" PRIMARY KEY ("id"));
-CREATE TABLE "StrategyVersion" ("id" TEXT NOT NULL,"strategyId" TEXT NOT NULL,"version" INTEGER NOT NULL,"graph" JSONB NOT NULL,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,CONSTRAINT "StrategyVersion_pkey" PRIMARY KEY ("id"));
-CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
-CREATE UNIQUE INDEX "StrategyVersion_strategyId_version_key" ON "StrategyVersion"("strategyId", "version");
-ALTER TABLE "Project" ADD CONSTRAINT "Project_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "Strategy" ADD CONSTRAINT "Strategy_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-ALTER TABLE "Strategy" ADD CONSTRAINT "Strategy_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-ALTER TABLE "StrategyVersion" ADD CONSTRAINT "StrategyVersion_strategyId_fkey" FOREIGN KEY ("strategyId") REFERENCES "Strategy"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+CREATE TABLE "ServiceHeartbeat" (
+  "id" TEXT NOT NULL,
+  "service" TEXT NOT NULL,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "ServiceHeartbeat_pkey" PRIMARY KEY ("id")
+);

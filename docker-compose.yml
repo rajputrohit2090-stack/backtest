@@ -7,9 +7,21 @@ services:
       POSTGRES_DB: backtest_ai
     ports: ["5432:5432"]
     volumes: [postgres_data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U backtest -d backtest_ai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   redis:
     image: redis:7-alpine
     ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   api:
     build:
       context: .
@@ -17,9 +29,27 @@ services:
     environment:
       DATABASE_URL: postgresql://backtest:backtest@postgres:5432/backtest_ai?schema=public
       REDIS_URL: redis://redis:6379
+      API_HOST: 0.0.0.0
+      API_PORT: 4000
       CORS_ORIGIN: http://localhost:5173
     ports: ["4000:4000"]
-    depends_on: [postgres, redis]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  python-engine:
+    build:
+      context: .
+      dockerfile: apps/python-engine/Dockerfile
+    environment:
+      PYTHON_ENGINE_HOST: 0.0.0.0
+      PYTHON_ENGINE_PORT: 8000
+      PYTHON_ENGINE_CORS_ORIGIN: http://localhost:5173
+      PYTHON_ENGINE_REDIS_URL: redis://redis:6379
+    ports: ["8000:8000"]
+    depends_on:
+      redis: { condition: service_healthy }
+
   web:
     build:
       context: .
@@ -27,6 +57,7 @@ services:
     environment:
       VITE_API_URL: http://localhost:4000/api
     ports: ["5173:5173"]
-    depends_on: [api]
+    depends_on: [api, python-engine]
+
 volumes:
   postgres_data:
