@@ -52,6 +52,7 @@ function SimpleStrategyWizard({ strategy }: { strategy: StrategyJson }) {
   const [mt5Path, setMt5Path] = useState('');
   const [mt5Status, setMt5Status] = useState('Click auto-detect or paste terminal64.exe path.');
   const [connectorStatus, setConnectorStatus] = useState('Connectors not saved yet.');
+  const [bridgeUrl, setBridgeUrl] = useState('http://localhost:8787');
   const steps = useMemo(() => idea.split(/[.\n]/).map((step) => step.trim()).filter(Boolean), [idea]);
   const template = useMemo(() => `// BackTest AI MT5 Expert Advisor Template\n// Strategy: ${strategy.name}\n// Language: ${language}\n// Confirmed steps:\n${steps.map((step, index) => `// ${index + 1}. ${step}`).join('\n')}\n\n#property strict\n#include <Trade/Trade.mqh>\nCTrade trade;\n\ninput double Lots = 0.10;\ninput int StopLossPips = 30;\ninput int TakeProfitPips = 60;\n\nint OnInit(){\n  return(INIT_SUCCEEDED);\n}\n\nvoid OnTick(){\n  // TODO: Replace this template logic with generated indicator rules after confirmation.\n}\n`, [language, steps, strategy.name]);
   const detectMt5 = async () => {
@@ -68,15 +69,43 @@ function SimpleStrategyWizard({ strategy }: { strategy: StrategyJson }) {
       setMt5Status('MT5 selection cancelled. You can paste the path manually.');
     }
   };
+  const connectBridge = async () => {
+    try {
+      const health = await fetch(`${bridgeUrl}/health`);
+      if (!health.ok) { setConnectorStatus('Desktop bridge not reachable. Start apps/desktop-bridge/bridge.py first.'); return; }
+      const detected = await fetch(`${bridgeUrl}/mt5/detect`).then((res) => res.json());
+      if (detected.primary) { setMt5Path(detected.primary); setMt5Status('MT5 detected by desktop bridge.'); }
+      setConnectorStatus(detected.primary ? 'Desktop bridge connected and MT5 detected.' : 'Desktop bridge connected. MT5 path not found; paste manually.');
+    } catch {
+      setConnectorStatus('Desktop bridge not reachable. Start apps/desktop-bridge/bridge.py first.');
+    }
+  };
+  const saveTemplateToBridge = async () => {
+    try {
+      const res = await fetch(`${bridgeUrl}/mt5/template`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: strategy.name, code: template }) });
+      setConnectorStatus(res.ok ? 'MT5 .mq5 template saved via desktop bridge.' : 'Bridge template save failed. Check bridge console.');
+    } catch {
+      setConnectorStatus('Desktop bridge not reachable. Start it before saving .mq5 files.');
+    }
+  };
+
+  const openMt5ViaBridge = async () => {
+    try {
+      const res = await fetch(`${bridgeUrl}/mt5/open`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ terminal_path: mt5Path || undefined }) });
+      setConnectorStatus(res.ok ? 'MT5 launch request sent through desktop bridge.' : 'Bridge could not open MT5. Detect or paste terminal path first.');
+    } catch {
+      setConnectorStatus('Desktop bridge not reachable. Start it before opening MT5.');
+    }
+  };
   const saveConnectors = () => {
-    localStorage.setItem('bt.strategy.connectors', JSON.stringify({ mt5Path, openAiKeyConfigured: Boolean(apiKey), backtesting: 'ready-to-configure', savedAt: new Date().toISOString() }));
+    localStorage.setItem('bt.strategy.connectors', JSON.stringify({ mt5Path, openAiKeyConfigured: Boolean(apiKey), backtesting: 'ready-to-configure', bridgeUrl, savedAt: new Date().toISOString() }));
     setConnectorStatus(apiKey ? 'OpenAI + MT5 connector settings saved locally.' : 'MT5 connector saved. OpenAI key can be added later.');
   };
   const saveTemplate = () => {
     localStorage.setItem('bt.strategy.mt5.template', JSON.stringify({ strategyName: strategy.name, language, idea, steps, template, mt5Path, openAiKeyConfigured: Boolean(apiKey), savedAt: new Date().toISOString() }));
     setConfirmed(true);
   };
-  return <section className="simple-builder-card"><div><span className="eyebrow">Simple mode</span><h2>Write strategy in Hindi, English, or Hinglish</h2><p>Non-technical users can describe rules in plain language, review the converted steps, confirm, and save an MT5-ready template draft for later backtesting workflow.</p></div><div className="simple-builder-grid"><label>Language<select value={language} onChange={(e)=>setLanguage(e.target.value as typeof language)}><option value="hinglish">Hinglish</option><option value="hindi">Hindi</option><option value="english">English</option></select></label><label>OpenAI API key<input value={apiKey} onChange={(e)=>setApiKey(e.target.value)} placeholder="sk-... optional for AI conversion" type="password" /></label><label>MetaTrader 5 terminal path<input value={mt5Path} onChange={(e)=>setMt5Path(e.target.value)} placeholder="C:\\Program Files\\MetaTrader 5\\terminal64.exe" /><button type="button" className="detect-mt5" onClick={detectMt5}>Auto-detect MT5</button><small>{mt5Status}</small></label></div><div className="connector-grid"><article><b>MT5 Connector</b><span>{mt5Path ? `Selected: ${mt5Path}` : mt5Status}</span></article><article><b>OpenAI Connector</b><span>{apiKey ? 'API key added for future AI conversion.' : 'Optional: add API key for AI step conversion.'}</span></article><article><b>Backtesting Connector</b><span>Template + duration inputs will be used by the MetaTrader 5 tester flow.</span></article><button type="button" onClick={saveConnectors}>Save connector settings</button><small>{connectorStatus}</small></div><textarea value={idea} onChange={(e)=>{setIdea(e.target.value);setConfirmed(false);}} placeholder="Example: EMA 20 cross above EMA 50 ho to BUY, RSI 60 ke upar confirm kare, SL 30 pips, TP 60 pips." /><div className="simple-steps"><h3>Converted confirmation steps</h3>{steps.map((step,index)=><p key={`${step}-${index}`}><b>{index+1}</b>{step}</p>)}{steps.length===0&&<p>No steps yet. Strategy likhiye.</p>}</div><div className="simple-actions"><button onClick={saveTemplate}>Confirm & save MT5 template</button><span>{confirmed ? 'Template saved locally. Backtesting screen can select this saved template next.' : 'Confirm karne ke baad template local storage me save hoga.'}</span></div><details><summary>MT5 template preview</summary><pre>{template}</pre></details></section>;
+  return <section className="simple-builder-card"><div><span className="eyebrow">Simple mode</span><h2>Write strategy in Hindi, English, or Hinglish</h2><p>Non-technical users can describe rules in plain language, review the converted steps, confirm, and save an MT5-ready template draft for later backtesting workflow.</p></div><div className="simple-builder-grid"><label>Language<select value={language} onChange={(e)=>setLanguage(e.target.value as typeof language)}><option value="hinglish">Hinglish</option><option value="hindi">Hindi</option><option value="english">English</option></select></label><label>OpenAI API key<input value={apiKey} onChange={(e)=>setApiKey(e.target.value)} placeholder="sk-... optional for AI conversion" type="password" /></label><label>MetaTrader 5 terminal path<input value={mt5Path} onChange={(e)=>setMt5Path(e.target.value)} placeholder="C:\\Program Files\\MetaTrader 5\\terminal64.exe" /><button type="button" className="detect-mt5" onClick={detectMt5}>Auto-detect MT5</button><small>{mt5Status}</small></label></div><div className="connector-grid"><article><b>MT5 Connector</b><span>{mt5Path ? `Selected: ${mt5Path}` : mt5Status}</span></article><article><b>OpenAI Connector</b><span>{apiKey ? 'API key added for future AI conversion.' : 'Optional: add API key for AI step conversion.'}</span></article><article><b>Backtesting Connector</b><span>Template + duration inputs will be used by the MetaTrader 5 tester flow.</span></article><label>Bridge URL<input value={bridgeUrl} onChange={(e)=>setBridgeUrl(e.target.value)} /></label><button type="button" onClick={connectBridge}>Connect desktop bridge</button><button type="button" onClick={saveTemplateToBridge}>Save .mq5 via bridge</button><button type="button" onClick={openMt5ViaBridge}>Open MT5</button><button type="button" onClick={saveConnectors}>Save connector settings</button><small>{connectorStatus}</small></div><textarea value={idea} onChange={(e)=>{setIdea(e.target.value);setConfirmed(false);}} placeholder="Example: EMA 20 cross above EMA 50 ho to BUY, RSI 60 ke upar confirm kare, SL 30 pips, TP 60 pips." /><div className="simple-steps"><h3>Converted confirmation steps</h3>{steps.map((step,index)=><p key={`${step}-${index}`}><b>{index+1}</b>{step}</p>)}{steps.length===0&&<p>No steps yet. Strategy likhiye.</p>}</div><div className="simple-actions"><button onClick={saveTemplate}>Confirm & save MT5 template</button><span>{confirmed ? 'Template saved locally. Backtesting screen can select this saved template next.' : 'Confirm karne ke baad template local storage me save hoga.'}</span></div><details><summary>MT5 template preview</summary><pre>{template}</pre></details></section>;
 }
 
 function validate(nodes:BuilderNode[], edges:BuilderEdge[]):ValidationItem[] { const out:ValidationItem[]=[]; const ids=new Set(nodes.map(n=>n.id)); edges.forEach(e=>{ if(!ids.has(e.source)||!ids.has(e.target)) out.push({level:'error', edgeId:e.id, message:'Invalid connection references a missing node.'}); if(!e.valid) out.push({level:'error', edgeId:e.id, message:e.error || 'Invalid connection type.'}); }); nodes.forEach(n=>{ if(n.inputs.length && !edges.some(e=>e.target===n.id)) out.push({level:'warning', nodeId:n.id, message:`${n.title} has missing inputs or is disconnected.`}); if(n.outputs.length && !edges.some(e=>e.source===n.id) && n.kind !== 'trade') out.push({level:'warning', nodeId:n.id, message:`${n.title} output is not connected.`}); if(n.disabled) out.push({level:'warning', nodeId:n.id, message:`${n.title} is disabled.`}); }); return out; }
