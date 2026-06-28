@@ -79,7 +79,6 @@ export function App() {
       setMessage('Desktop bridge is not reachable. Run apps/desktop-bridge/bridge.py and try again.');
     }
   };
-
   const openMeta5 = async () => {
     setStatus('checking');
     setMessage('Sending MetaTrader 5 open request...');
