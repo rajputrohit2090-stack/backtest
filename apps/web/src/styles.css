@@ -45,3 +45,5 @@ select { width: 100%; border: 1px solid var(--line); border-radius: 0.9rem; back
 .grid-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 0.85rem; }
 .grid-form button { align-self: end; }
 .strategy-list article { cursor: pointer; }
+.checkbox { align-items: center; grid-template-columns: auto 1fr; display: grid; color: var(--muted); }
+.checkbox input { width: auto; }

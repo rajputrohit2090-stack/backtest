@@ -85,7 +85,7 @@ cd apps/python-engine && ruff check . && black --check . && pytest
 
 ## AI Strategy Builder
 
-The API now exposes an AI Strategy Builder for Hindi, Hinglish, and English trading-strategy prompts. The backend reads `OPENAI_API_KEY` only from server environment variables and calls the OpenAI Responses API with Structured Outputs, following OpenAI's documented Responses API text-generation and JSON-schema style.
+The site purpose is focused: users write a strategy in Hindi, Hinglish, or English; AI converts it into step-wise saved rules and executable MetaTrader 5 Expert Advisor source; users then select the saved template for MetaTrader-style backtesting. The backend reads `OPENAI_API_KEY` only from server environment variables and calls the OpenAI Responses API with Structured Outputs.
 
 ### Environment variables
 
@@ -116,4 +116,4 @@ For safety, users do not type the OpenAI API key in the browser. Configure `OPEN
 
 ### Template backtesting
 
-Saved templates can be prepared for MetaTrader-style backtesting with `POST /api/strategy/:id/backtest`. The request asks for practical Strategy Tester fields: symbol, timeframe, from/to dates, initial deposit, currency, leverage, execution model, spread, lot size, stop-loss points, and take-profit points. The backend writes a tester `.ini` file under `/generated-strategies/{strategyId}/backtests/`. If `MT5_TERMINAL_PATH` is configured, the backend attempts to start MetaTrader 5 with that tester config; otherwise it returns a clear configuration-ready message and does not fake a result.
+Saved templates can be prepared for MetaTrader-style backtesting with `POST /api/strategy/:id/backtest`. The request asks for Strategy Tester-style fields matching MetaTrader 5 settings: expert/template, symbol, timeframe, custom date period, forward mode/date, delays, modelling mode, deposit, currency, leverage, optimization, visual mode, profit-in-pips, spread, lot size, stop-loss points, and take-profit points. The backend writes a tester `.ini` file under `/generated-strategies/{strategyId}/backtests/`. If `MT5_TERMINAL_PATH` is configured, the backend attempts to start MetaTrader 5 with that tester config; otherwise it returns a clear configuration-ready message and does not fake a result.

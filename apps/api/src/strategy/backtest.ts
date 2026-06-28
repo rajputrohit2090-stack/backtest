@@ -12,7 +12,12 @@ export const backtestConfigSchema = z.object({
   initialDeposit: z.coerce.number().positive().default(10000),
   currency: z.string().min(3).max(6).default('USD'),
   leverage: z.string().min(1).default('1:100'),
-  executionModel: z.enum(['every_tick', 'real_ticks', 'open_prices']).default('every_tick'),
+  dateMode: z.string().default('custom_period'),
+  forwardMode: z.string().default('no'),
+  forwardDate: z.string().regex(/^\d{4}\.\d{2}\.\d{2}$/).optional(),
+  delay: z.string().default('1 ms'),
+  modelling: z.enum(['every_tick', 'real_ticks', 'open_prices', 'one_minute_ohlc']).default('one_minute_ohlc'),
+  profitInPips: z.boolean().default(false),
   spread: z.string().default('current'),
   visualMode: z.boolean().default(false),
   optimization: z.boolean().default(false),
@@ -29,7 +34,7 @@ export async function createBacktestFiles(strategyId: string, expertName: string
   await mkdir(root, { recursive: true });
   const reportPath = path.join(root, `report-${Date.now()}.html`);
   const iniFilePath = path.join(root, `tester-${Date.now()}.ini`);
-  const model = backtest.executionModel === 'real_ticks' ? 4 : backtest.executionModel === 'open_prices' ? 1 : 0;
+  const model = backtest.modelling === 'real_ticks' ? 4 : backtest.modelling === 'open_prices' ? 1 : backtest.modelling === 'one_minute_ohlc' ? 2 : 0;
   const content = [
     '[Tester]',
     `Expert=${expertName}`,
@@ -37,7 +42,12 @@ export async function createBacktestFiles(strategyId: string, expertName: string
     `Period=${backtest.timeframe}`,
     `FromDate=${backtest.fromDate}`,
     `ToDate=${backtest.toDate}`,
+    `ForwardMode=${backtest.forwardMode}`,
+    `ForwardDate=${backtest.forwardDate ?? ''}`,
+    `Delay=${backtest.delay}`,
     `Model=${model}`,
+    `ProfitInPips=${backtest.profitInPips ? 1 : 0}`,
+    `Spread=${backtest.spread}`,
     `Deposit=${backtest.initialDeposit}`,
     `Currency=${backtest.currency}`,
     `Leverage=${backtest.leverage}`,

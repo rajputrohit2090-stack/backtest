@@ -36,6 +36,7 @@ describe('MQ5 generation', () => {
     validateMql5Source(source);
     expect(source).toContain('input long MagicNumber');
     expect(source).toContain('POSITION_MAGIC');
+    expect(source).toContain('CopyBuffer');
   });
 
   it('returns clear compiler unavailable case', async () => {
@@ -51,7 +52,7 @@ describe('template backtesting', () => {
   it('validates MetaTrader-style backtest fields', () => {
     const config = backtestConfigSchema.parse({ symbol: 'XAUUSD', timeframe: 'M5', fromDate: '2026.01.01', toDate: '2026.06.28' });
     expect(config.initialDeposit).toBe(10000);
-    expect(config.executionModel).toBe('every_tick');
+    expect(config.modelling).toBe('one_minute_ohlc');
   });
 
   it('returns a configuration-ready message when MT5 terminal is unavailable', async () => {
