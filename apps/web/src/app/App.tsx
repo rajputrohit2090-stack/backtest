@@ -62,13 +62,13 @@ export function App() {
   const [search, setSearch] = useState('');
   const [saved, setSaved] = useState<SavedStrategy[]>([]);
   const [builderMessage, setBuilderMessage] = useState('Describe a strategy in Hindi, Hinglish, or English.');
-  const [openAiStatus, setOpenAiStatus] = useState('OpenAI key status not checked yet.');
+  const [serverKeyStatus, setServerKeyStatus] = useState('OpenAI key status not checked yet.');
   const [backtest, setBacktest] = useState<BacktestForm>(defaultBacktest);
   const [backtestMessage, setBacktestMessage] = useState('Save a template, generate MQ5, then run a MetaTrader-style backtest setup.');
 
-  const checkOpenAiStatus = async () => {
+  const handleCheckServerKey = async () => {
     const result = await fetch(`${apiBase}/strategy/ai/status`).then((response) => response.json());
-    setOpenAiStatus(result.message);
+    setServerKeyStatus(result.message);
   };
 
   const parsePrompt = async () => {
@@ -130,76 +130,14 @@ export function App() {
     setBacktest((current) => ({ ...current, [key]: value }));
   };
 
-  const checkOpenAiStatus = async () => {
-    const result = await fetch(`${apiBase}/strategy/ai/status`).then((response) => response.json());
-    setOpenAiStatus(result.message);
-  };
-
-  const parsePrompt = async () => {
-    const result = await fetch(`${apiBase}/strategy/ai/parse`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ prompt }),
-    }).then((response) => response.json());
-    setRules(result.rules);
-    setBacktest((current) => ({
-      ...current,
-      symbol: result.rules?.symbol ?? current.symbol,
-      timeframe: result.rules?.timeframe ?? current.timeframe,
-    }));
-    setBuilderMessage(result.complete ? 'Rules complete. Save as a reusable template.' : `AI needs: ${result.followUpQuestions.join(' ')}`);
-  };
-
-  const saveTemplate = async () => {
-    if (!rules) return;
-    const result = await fetch(`${apiBase}/strategy/save`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ name: rules.strategyName, description: rules.description, userLanguage: rules.userLanguage, rules }),
-    }).then((response) => response.json());
-    setStrategyId(result.strategy.id);
-    setBuilderMessage('Strategy template saved. You can now generate MQ5 or prepare a backtest.');
-  };
-
-  const generateMq5 = async () => {
-    if (!strategyId) return;
-    await fetch(`${apiBase}/strategy/${strategyId}/generate-mq5`, { method: 'POST' }).then((response) => response.json());
-    setBuilderMessage('MQ5 generated. Download it or compile in MetaEditor to create EX5.');
-  };
-
-  const downloadMq5 = () => {
-    if (strategyId) window.open(`${apiBase}/strategy/${strategyId}/download-mq5`, '_blank');
-  };
-
-  const searchStrategies = async () => {
-    const result = await fetch(`${apiBase}/strategy/search?q=${encodeURIComponent(search)}`).then((response) => response.json());
-    setSaved(result.strategies);
-    setBuilderMessage(result.enhanced ? `AI search expanded: ${result.enhanced.tags.join(', ')}` : 'Saved strategies loaded.');
-  };
-
-  const runBacktest = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!strategyId) return;
-    const result = await fetch(`${apiBase}/strategy/${strategyId}/backtest`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(backtest),
-    }).then((response) => response.json());
-    setBacktestMessage(result.message ?? 'Backtest request created.');
-  };
-
-  const updateBacktest = (key: keyof BacktestForm) => (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setBacktest((current) => ({ ...current, [key]: event.target.value }));
-  };
-
   return (
     <main className="page-shell dashboard">
       <section className="connect-card builder" aria-labelledby="builder-title">
         <p className="eyebrow">AI Strategy Builder</p>
         <h1 id="builder-title">Strategy to MT5 Algo Code</h1>
         <p className="intro">Write a trading strategy in Hindi, Hinglish, or English. AI converts it into step-wise rules and executable MetaTrader 5 Expert Advisor source.</p>
-        <div className="status"><strong>OpenAI API key</strong><span>{openAiStatus}</span></div>
-        <button className="secondary" onClick={checkOpenAiStatus}>Check backend OpenAI key</button>
+        <div className="status"><strong>OpenAI API key</strong><span>{serverKeyStatus}</span></div>
+        <button className="secondary" onClick={handleCheckServerKey}>Check backend OpenAI key</button>
 
         <label>
           Strategy prompt
