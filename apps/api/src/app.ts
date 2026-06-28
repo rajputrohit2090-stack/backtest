@@ -12,6 +12,7 @@ import { healthRoutes } from './routes/health.js';
 import { authPlugin } from './auth/hooks.js';
 import { authRoutes } from './routes/auth.js';
 import { userRoutes } from './routes/users.js';
+import { strategyRoutes } from './routes/strategy.js';
 
 export async function buildApp() {
   const app = Fastify({ logger: { level: config.NODE_ENV === 'test' ? 'silent' : 'info' } });
@@ -37,5 +38,6 @@ export async function buildApp() {
   await app.register(healthRoutes, { prefix: '/api' });
   await app.register(authRoutes, { prefix: '/api' });
   await app.register(userRoutes, { prefix: '/api' });
+  await app.register(strategyRoutes, { prefix: '/api' });
   return app;
 }
