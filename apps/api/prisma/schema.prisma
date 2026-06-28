@@ -41,6 +41,7 @@ model User {
   emailVerifications EmailVerification[]
   passwordResets     PasswordReset[]
   loginHistory       LoginHistory[]
+  aiStrategies       AiStrategyTemplate[]
 
   @@map("users")
 }
@@ -120,4 +121,62 @@ model LoginHistory {
   createdAt DateTime @default(now())
 
   @@map("login_history")
+}
+
+model AiStrategyTemplate {
+  id              String   @id @default(cuid())
+  name            String
+  description     String
+  userLanguage    String
+  symbol          String?
+  timeframe       String?
+  indicators      String[] @default([])
+  tags            String[] @default([])
+  rules           Json
+  generatedMql5   String?
+  mq5FilePath     String?
+  ex5FilePath     String?
+  compileMessage  String?
+  isComplete      Boolean  @default(false)
+  searchText      String
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  steps           AiStrategyStep[]
+  backtests        AiStrategyBacktest[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([symbol])
+  @@index([timeframe])
+  @@map("ai_strategy_templates")
+}
+
+model AiStrategyStep {
+  id          String   @id @default(cuid())
+  strategyId  String
+  strategy    AiStrategyTemplate @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+  stepKey     String
+  stepValue   Json
+  question    String?
+  createdAt   DateTime @default(now())
+
+  @@index([strategyId])
+  @@map("ai_strategy_steps")
+}
+
+
+model AiStrategyBacktest {
+  id          String   @id @default(cuid())
+  strategyId  String
+  strategy    AiStrategyTemplate @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+  status      String   @default("PENDING")
+  config      Json
+  iniFilePath String?
+  reportPath  String?
+  message     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([strategyId])
+  @@map("ai_strategy_backtests")
 }

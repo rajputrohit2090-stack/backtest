@@ -82,3 +82,38 @@ npm test
 npm run build
 cd apps/python-engine && ruff check . && black --check . && pytest
 ```
+
+## AI Strategy Builder
+
+The site purpose is focused: users write a strategy in Hindi, Hinglish, or English; AI converts it into step-wise saved rules and executable MetaTrader 5 Expert Advisor source; users then select the saved template for MetaTrader-style backtesting. The backend reads `OPENAI_API_KEY` only from server environment variables and calls the OpenAI Responses API with Structured Outputs.
+
+### Environment variables
+
+```bash
+OPENAI_API_KEY=
+MT5_TERMINAL_PATH=
+METAEDITOR_PATH=
+GENERATED_STRATEGY_DIR=generated-strategies
+```
+
+### Endpoints
+
+- `POST /api/strategy/ai/parse`
+- `POST /api/strategy/save`
+- `GET /api/strategy/search?q=`
+- `GET /api/strategy/:id`
+- `POST /api/strategy/:id/generate-mq5`
+- `POST /api/strategy/:id/compile`
+- `POST /api/strategy/:id/deploy-mt5`
+- `GET /api/strategy/ai/status`
+- `POST /api/strategy/:id/backtest`
+
+Generated strategies are written to `/generated-strategies/{strategyId}/` with `strategy.json`, a compile-ready `.mq5` Expert Advisor, and `README.md`. If `METAEDITOR_PATH` is not configured, the API returns: “MQ5 file generated. Please compile it in MetaEditor to create EX5.”
+
+### OpenAI key and AI search
+
+For safety, users do not type the OpenAI API key in the browser. Configure `OPENAI_API_KEY` in the backend environment and use `GET /api/strategy/ai/status` from the UI to confirm whether the server key is available. Saved-template search uses that backend key to expand Hindi, Hinglish, or English search text into strategy tags/indicators before matching saved templates.
+
+### Template backtesting
+
+Saved templates can be prepared for MetaTrader-style backtesting with `POST /api/strategy/:id/backtest`. The request asks for Strategy Tester-style fields matching MetaTrader 5 settings: expert/template, symbol, timeframe, custom date period, forward mode/date, delays, modelling mode, deposit, currency, leverage, optimization, visual mode, profit-in-pips, spread, lot size, stop-loss points, and take-profit points. The backend writes a tester `.ini` file under `/generated-strategies/{strategyId}/backtests/`. If `MT5_TERMINAL_PATH` is configured, the backend attempts to start MetaTrader 5 with that tester config; otherwise it returns a clear configuration-ready message and does not fake a result.
