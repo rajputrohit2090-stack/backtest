@@ -8,7 +8,7 @@ BackTest AI is a production-ready SaaS foundation monorepo. This repository inte
 - Node.js, Fastify, TypeScript, Swagger, CORS, rate limiting
 - FastAPI on Python 3.12
 - PostgreSQL, Redis, Prisma
-- pnpm workspaces and Turborepo
+- npm workspaces and Turborepo
 - Docker and Docker Compose
 - Vitest, Playwright, Pytest
 - ESLint, Prettier, Ruff, Black
@@ -37,10 +37,20 @@ The Docker Compose file provides service-specific environment variables for Post
 ## Local development
 
 ```bash
-pnpm install
-pnpm db:generate
-pnpm dev
+npm install
+npm run db:generate
+npm run dev
 ```
+
+
+Run only the current MetaTrader 5 web step:
+
+```bash
+npm run web:install
+npm run web:dev
+```
+
+Then open <http://localhost:5173>. Start the Windows desktop bridge separately from `apps/desktop-bridge` before clicking **Connect to Meta5**.
 
 Run the Python service locally from `apps/python-engine`:
 
@@ -66,9 +76,9 @@ docker compose up --build
 ## Quality checks
 
 ```bash
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm build
+npm run lint
+npm run typecheck
+npm test
+npm run build
 cd apps/python-engine && ruff check . && black --check . && pytest
 ```
