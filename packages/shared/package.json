@@ -1,1 +1,21 @@
-{"name":"@backtest-ai/shared","version":"0.1.0","private":true,"type":"module","main":"dist/index.js","types":"dist/index.d.ts","scripts":{"build":"tsc -p tsconfig.json","lint":"tsc -p tsconfig.json --noEmit","typecheck":"tsc -p tsconfig.json --noEmit","test":"vitest run --passWithNoTests"},"dependencies":{"@backtest-ai/types":"workspace:*"},"devDependencies":{"typescript":"^5.8.3","vitest":"^3.2.4"}}
+{
+  "name": "@backtest-ai/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@backtest-ai/types": "file:../types"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}

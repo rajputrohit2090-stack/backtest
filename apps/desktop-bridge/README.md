@@ -4,13 +4,37 @@ Local Windows bridge for browser-to-desktop actions that a React app cannot do d
 
 ## Run on Windows
 
+This bridge now uses only the Python standard library, so FastAPI, Pydantic, Uvicorn, Rust, and Cargo are not required. From PowerShell, run these commands:
+
+```powershell
+cd C:\Users\hii\Desktop\backtest\apps\desktop-bridge
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python bridge.py
+```
+
+If PowerShell blocks activation scripts, use CMD instead:
+
 ```cmd
 cd C:\Users\hii\Desktop\backtest\apps\desktop-bridge
 py -m venv .venv
-.venv\Scripts\activate
-pip install fastapi uvicorn pydantic
+.venv\Scripts\activate.bat
 python bridge.py
 ```
+
+## One-command helpers
+
+You can also double-click `start_bridge.bat`, or run one of these from `apps\desktop-bridge`:
+
+```powershell
+.\start_bridge.ps1
+```
+
+```cmd
+start_bridge.bat
+```
+
+The helper creates `.venv` and starts the bridge. No Python package install is required.
 
 Bridge URL: `http://localhost:8787`
 

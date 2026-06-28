@@ -1,24 +1,14 @@
 import { render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { App } from '../app/App';
 
-beforeEach(() => {
-  localStorage.clear();
-  window.history.pushState({}, '', '/');
-});
-
-describe('App shell routing', () => {
-  it('renders the existing authentication entry point for guests', () => {
+describe('Meta5 connection screen', () => {
+  it('renders only the first-step MetaTrader 5 connection flow', () => {
     render(<App />);
-    expect(screen.getByRole('heading', { name: 'Login' })).toBeInTheDocument();
-  });
 
-  it('renders the dashboard shell for authenticated users', async () => {
-    localStorage.setItem('accessToken', 'test-token');
-    window.history.pushState({}, '', '/dashboard');
-    render(<App />);
-    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
-    expect(screen.getByText('Total Strategies')).toBeInTheDocument();
-    expect(screen.getByText('Strategy Builder')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Connect to MetaTrader 5' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Connect to Meta5' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Desktop bridge URL')).toHaveValue('http://localhost:8787');
+    expect(screen.queryByText('Dashboard')).not.toBeInTheDocument();
   });
 });
