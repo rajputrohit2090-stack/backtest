@@ -4,6 +4,7 @@ import rateLimit from '@fastify/rate-limit';
 import helmet from '@fastify/helmet';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
+import { ZodError } from 'zod';
 import { config } from './config.js';
 import { prismaPlugin } from './plugins/prisma.js';
 import { redisPlugin } from './plugins/redis.js';
@@ -14,6 +15,16 @@ import { userRoutes } from './routes/users.js';
 
 export async function buildApp() {
   const app = Fastify({ logger: { level: config.NODE_ENV === 'test' ? 'silent' : 'info' } });
+  app.setErrorHandler((error, request, reply) => {
+    if (error instanceof ZodError) {
+      return reply.code(400).send({
+        message: error.issues[0]?.message ?? 'Invalid request',
+        issues: error.issues,
+      });
+    }
+    request.log.error(error);
+    return reply.code(error.statusCode ?? 500).send({ message: error.message ?? 'Internal Server Error' });
+  });
   await app.register(helmet, { contentSecurityPolicy: false });
   await app.register(cors, { origin: config.CORS_ORIGIN, credentials: true });
   await app.register(rateLimit, { max: config.RATE_LIMIT_MAX, timeWindow: config.RATE_LIMIT_WINDOW });
