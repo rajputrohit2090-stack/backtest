@@ -14,8 +14,8 @@
     "db:migrate": "prisma migrate dev"
   },
   "dependencies": {
-    "@backtest-ai/shared": "workspace:*",
-    "@backtest-ai/types": "workspace:*",
+    "@backtest-ai/shared": "file:../../packages/shared",
+    "@backtest-ai/types": "file:../../packages/types",
     "@fastify/cors": "^10.0.1",
     "@fastify/rate-limit": "^10.3.0",
     "@fastify/swagger": "^9.5.1",

@@ -2,7 +2,7 @@
   "name": "backtest-ai",
   "private": true,
   "version": "0.1.0",
-  "packageManager": "pnpm@9.15.4",
+  "packageManager": "npm@11.6.2",
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
@@ -11,8 +11,12 @@
     "format:check": "prettier --check .",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
-    "db:generate": "pnpm --filter @backtest-ai/api db:generate",
-    "db:migrate": "pnpm --filter @backtest-ai/api db:migrate"
+    "db:generate": "npm --workspace @backtest-ai/api run db:generate",
+    "db:migrate": "npm --workspace @backtest-ai/api run db:migrate",
+    "web:dev": "npm --prefix apps/web run dev",
+    "web:build": "npm --prefix apps/web run build",
+    "web:test": "npm --prefix apps/web run test",
+    "web:install": "npm --prefix apps/web install"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.0",
@@ -22,5 +26,9 @@
     "turbo": "^2.5.4",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.35.0"
-  }
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
 }
