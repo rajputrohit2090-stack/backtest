@@ -35,6 +35,29 @@ export async function parseStrategyWithOpenAI(prompt: string): Promise<StrategyR
   return strategyRulesSchema.parse(JSON.parse(text));
 }
 
+export async function enhanceSearchQueryWithOpenAI(query: string) {
+  if (!config.OPENAI_API_KEY) {
+    const parsed = heuristicParse(query);
+    return { query, tags: parsed.tags, indicators: parsed.indicators, language: parsed.userLanguage };
+  }
+  const response = await fetch('https://api.openai.com/v1/responses', {
+    method: 'POST',
+    headers: { authorization: `Bearer ${config.OPENAI_API_KEY}`, 'content-type': 'application/json' },
+    body: JSON.stringify({
+      model: 'gpt-5.5',
+      input: `Extract searchable trading strategy keywords from this Hindi, Hinglish, or English query. Return JSON with query, tags, indicators, language: ${query}`,
+      text: { format: { type: 'json_schema', name: 'strategy_search', strict: true, schema: {
+        type: 'object', additionalProperties: false, required: ['query','tags','indicators','language'],
+        properties: { query: { type: 'string' }, tags: { type: 'array', items: { type: 'string' } }, indicators: { type: 'array', items: { type: 'string' } }, language: { type: 'string' } }
+      } } },
+    }),
+  });
+  if (!response.ok) throw new Error(`OpenAI search enhancement failed with ${response.status}`);
+  const data = await response.json() as { output_text?: string; output?: Array<{ content?: Array<{ text?: string }> }> };
+  const text = data.output_text ?? data.output?.flatMap((o) => o.content ?? []).map((c) => c.text ?? '').join('') ?? '';
+  return JSON.parse(text) as { query: string; tags: string[]; indicators: string[]; language: string };
+}
+
 export function heuristicParse(prompt: string): StrategyRules {
   const p = prompt.toLowerCase();
   const indicators = ['EMA','RSI','SMA','MACD'].filter((i) => p.includes(i.toLowerCase()));

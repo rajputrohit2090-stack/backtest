@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { heuristicParse } from '../src/strategy/openai.js';
 import { compileMql5, generateMql5Source, validateMql5Source } from '../src/strategy/mql5.js';
+import { backtestConfigSchema, runMt5Backtest } from '../src/strategy/backtest.js';
 
 process.env.NODE_ENV = 'test';
 process.env.DATABASE_URL = 'postgresql://user:pass@localhost:5432/test';
@@ -42,5 +43,21 @@ describe('MQ5 generation', () => {
     const result = await compileMql5('/tmp/example.mq5');
     expect(result.compiled).toBe(false);
     expect(result.message).toContain('Please compile it in MetaEditor');
+  });
+});
+
+
+describe('template backtesting', () => {
+  it('validates MetaTrader-style backtest fields', () => {
+    const config = backtestConfigSchema.parse({ symbol: 'XAUUSD', timeframe: 'M5', fromDate: '2026.01.01', toDate: '2026.06.28' });
+    expect(config.initialDeposit).toBe(10000);
+    expect(config.executionModel).toBe('every_tick');
+  });
+
+  it('returns a configuration-ready message when MT5 terminal is unavailable', async () => {
+    delete process.env.MT5_TERMINAL_PATH;
+    const result = await runMt5Backtest('/tmp/tester.ini');
+    expect(result.status).toBe('CONFIG_READY');
+    expect(result.message).toContain('MT5_TERMINAL_PATH');
   });
 });

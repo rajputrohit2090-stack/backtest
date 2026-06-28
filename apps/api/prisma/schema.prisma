@@ -142,6 +142,7 @@ model AiStrategyTemplate {
   userId          String?
   user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   steps           AiStrategyStep[]
+  backtests        AiStrategyBacktest[]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -161,4 +162,21 @@ model AiStrategyStep {
 
   @@index([strategyId])
   @@map("ai_strategy_steps")
+}
+
+
+model AiStrategyBacktest {
+  id          String   @id @default(cuid())
+  strategyId  String
+  strategy    AiStrategyTemplate @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+  status      String   @default("PENDING")
+  config      Json
+  iniFilePath String?
+  reportPath  String?
+  message     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([strategyId])
+  @@map("ai_strategy_backtests")
 }

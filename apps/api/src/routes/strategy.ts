@@ -1,14 +1,18 @@
 import { createReadStream } from 'node:fs';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { parseStrategyWithOpenAI } from '../strategy/openai.js';
+import { config } from '../config.js';
+import { enhanceSearchQueryWithOpenAI, parseStrategyWithOpenAI } from '../strategy/openai.js';
 import { saveStrategySchema } from '../strategy/types.js';
 import { compileMql5, generateMql5Source, writeStrategyFolder } from '../strategy/mql5.js';
+import { backtestConfigSchema, createBacktestFiles, runMt5Backtest } from '../strategy/backtest.js';
 
 const parseBody = z.object({ prompt: z.string().min(1) });
 const idParams = z.object({ id: z.string().min(1) });
 
 export const strategyRoutes: FastifyPluginAsync = async (app) => {
+  app.get('/strategy/ai/status', async () => ({ configured: Boolean(config.OPENAI_API_KEY), message: config.OPENAI_API_KEY ? 'OpenAI API key is configured on the backend.' : 'Set OPENAI_API_KEY on the backend server. Keys are never accepted by or exposed to the frontend.' }));
+
   app.post('/strategy/ai/parse', async (request) => {
     const { prompt } = parseBody.parse(request.body);
     const rules = await parseStrategyWithOpenAI(prompt);
@@ -25,13 +29,15 @@ export const strategyRoutes: FastifyPluginAsync = async (app) => {
 
   app.get('/strategy/search', async (request) => {
     const q = String((request.query as { q?: string }).q ?? '').toLowerCase();
-    const strategies = await app.prisma.aiStrategyTemplate.findMany({ where: q ? { searchText: { contains: q, mode: 'insensitive' } } : {}, orderBy: { updatedAt: 'desc' }, take: 50 });
-    return { strategies };
+    const enhanced = q ? await enhanceSearchQueryWithOpenAI(q) : null;
+    const searchTerms = enhanced ? [enhanced.query, ...enhanced.tags, ...enhanced.indicators].filter(Boolean).map((term) => term.toLowerCase()) : [q];
+    const strategies = await app.prisma.aiStrategyTemplate.findMany({ where: searchTerms.length ? { OR: searchTerms.map((term) => ({ searchText: { contains: term, mode: 'insensitive' as const } })) } : {}, orderBy: { updatedAt: 'desc' }, take: 50 });
+    return { strategies, enhanced };
   });
 
   app.get('/strategy/:id', async (request) => {
     const { id } = idParams.parse(request.params);
-    return { strategy: await app.prisma.aiStrategyTemplate.findUniqueOrThrow({ where: { id }, include: { steps: true } }) };
+    return { strategy: await app.prisma.aiStrategyTemplate.findUniqueOrThrow({ where: { id }, include: { steps: true, backtests: true } }) };
   });
 
   app.post('/strategy/:id/generate-mq5', async (request) => {
@@ -57,6 +63,17 @@ export const strategyRoutes: FastifyPluginAsync = async (app) => {
     const result = await compileMql5(mq5Path);
     await app.prisma.aiStrategyTemplate.update({ where: { id }, data: { compileMessage: result.message, ex5FilePath: result.ex5Path } });
     return result;
+  });
+
+  app.post('/strategy/:id/backtest', async (request) => {
+    const { id } = idParams.parse(request.params);
+    const strategy = await app.prisma.aiStrategyTemplate.findUniqueOrThrow({ where: { id } });
+    const backtest = backtestConfigSchema.parse(request.body);
+    const expertName = strategy.mq5FilePath ? strategy.mq5FilePath : strategy.name;
+    const files = await createBacktestFiles(id, expertName, backtest);
+    const result = await runMt5Backtest(files.iniFilePath);
+    const run = await app.prisma.aiStrategyBacktest.create({ data: { strategyId: id, status: result.status, config: backtest, iniFilePath: files.iniFilePath, reportPath: files.reportPath, message: result.message } });
+    return { backtest: run, ...files, ...result };
   });
 
   app.post('/strategy/:id/deploy-mt5', async (request) => {
