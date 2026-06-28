@@ -23,7 +23,8 @@ export async function buildApp() {
       });
     }
     request.log.error(error);
-    return reply.code(error.statusCode ?? 500).send({ message: error.message ?? 'Internal Server Error' });
+    const normalized = error as { statusCode?: number; message?: string };
+    return reply.code(normalized.statusCode ?? 500).send({ message: normalized.message ?? 'Internal Server Error' });
   });
   await app.register(helmet, { contentSecurityPolicy: false });
   await app.register(cors, { origin: config.CORS_ORIGIN, credentials: true });
