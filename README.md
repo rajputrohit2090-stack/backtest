@@ -82,3 +82,28 @@ npm test
 npm run build
 cd apps/python-engine && ruff check . && black --check . && pytest
 ```
+
+## AI Strategy Builder
+
+The API now exposes an AI Strategy Builder for Hindi, Hinglish, and English trading-strategy prompts. The backend reads `OPENAI_API_KEY` only from server environment variables and calls the OpenAI Responses API with Structured Outputs, following OpenAI's documented Responses API text-generation and JSON-schema style.
+
+### Environment variables
+
+```bash
+OPENAI_API_KEY=
+MT5_TERMINAL_PATH=
+METAEDITOR_PATH=
+GENERATED_STRATEGY_DIR=generated-strategies
+```
+
+### Endpoints
+
+- `POST /api/strategy/ai/parse`
+- `POST /api/strategy/save`
+- `GET /api/strategy/search?q=`
+- `GET /api/strategy/:id`
+- `POST /api/strategy/:id/generate-mq5`
+- `POST /api/strategy/:id/compile`
+- `POST /api/strategy/:id/deploy-mt5`
+
+Generated strategies are written to `/generated-strategies/{strategyId}/` with `strategy.json`, a compile-ready `.mq5` Expert Advisor, and `README.md`. If `METAEDITOR_PATH` is not configured, the API returns: “MQ5 file generated. Please compile it in MetaEditor to create EX5.”
