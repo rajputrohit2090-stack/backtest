@@ -2,7 +2,19 @@
 
 Local Windows bridge for browser-to-desktop actions that a React app cannot do directly.
 
-## Run on Windows
+## Fix `No module named 'fastapi'`
+
+Your screenshot shows Python is working, but the bridge dependencies are not installed yet. From PowerShell, run these commands:
+
+```powershell
+cd C:\Users\hii\Desktop\backtest\apps\desktop-bridge
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python bridge.py
+```
+
+If PowerShell blocks activation scripts, use CMD instead:
 
 This bridge now uses only the Python standard library, so FastAPI, Pydantic, Uvicorn, Rust, and Cargo are not required. From PowerShell, run these commands:
 
