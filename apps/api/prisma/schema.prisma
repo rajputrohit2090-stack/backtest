@@ -1,33 +1,123 @@
-generator client { provider = "prisma-client-js" }
-datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+generator client {
+  provider = "prisma-client-js"
+}
 
-enum UserRole { ADMIN PREMIUM_USER FREE_USER }
-enum SessionStatus { ACTIVE REVOKED EXPIRED }
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
 
-model ServiceHeartbeat { id String @id @default(cuid()) service String createdAt DateTime @default(now()) }
+enum UserRole {
+  ADMIN
+  PREMIUM_USER
+  FREE_USER
+}
+
+enum SessionStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+model ServiceHeartbeat {
+  id        String   @id @default(cuid())
+  service   String
+  createdAt DateTime @default(now())
+}
 
 model User {
-  id String @id @default(cuid())
-  email String @unique
-  passwordHash String
-  name String?
-  avatarUrl String?
-  emailVerifiedAt DateTime?
-  isActive Boolean @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  roles Role[]
-  sessions Session[]
-  refreshTokens RefreshToken[]
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  passwordHash       String
+  name               String?
+  avatarUrl          String?
+  emailVerifiedAt    DateTime?
+  isActive           Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  roles              Role[]
+  sessions           Session[]
+  refreshTokens      RefreshToken[]
   emailVerifications EmailVerification[]
-  passwordResets PasswordReset[]
-  loginHistory LoginHistory[]
+  passwordResets     PasswordReset[]
+  loginHistory       LoginHistory[]
+
   @@map("users")
 }
 
-model Role { id String @id @default(cuid()) name UserRole @unique users User[] @@map("roles") }
-model Session { id String @id @default(cuid()) userId String user User @relation(fields:[userId], references:[id], onDelete:Cascade) status SessionStatus @default(ACTIVE) ipAddress String? userAgent String? createdAt DateTime @default(now()) expiresAt DateTime revokedAt DateTime? refreshTokens RefreshToken[] @@map("sessions") }
-model RefreshToken { id String @id @default(cuid()) userId String user User @relation(fields:[userId], references:[id], onDelete:Cascade) sessionId String session Session @relation(fields:[sessionId], references:[id], onDelete:Cascade) tokenHash String @unique family String replacedById String? revokedAt DateTime? createdAt DateTime @default(now()) expiresAt DateTime @@map("refresh_tokens") }
-model EmailVerification { id String @id @default(cuid()) userId String user User @relation(fields:[userId], references:[id], onDelete:Cascade) tokenHash String @unique createdAt DateTime @default(now()) expiresAt DateTime verifiedAt DateTime? @@map("email_verifications") }
-model PasswordReset { id String @id @default(cuid()) userId String user User @relation(fields:[userId], references:[id], onDelete:Cascade) tokenHash String @unique createdAt DateTime @default(now()) expiresAt DateTime usedAt DateTime? @@map("password_resets") }
-model LoginHistory { id String @id @default(cuid()) userId String? user User? @relation(fields:[userId], references:[id], onDelete:SetNull) email String ipAddress String? userAgent String? success Boolean reason String? createdAt DateTime @default(now()) @@map("login_history") }
+model Role {
+  id    String   @id @default(cuid())
+  name  UserRole @unique
+  users User[]
+
+  @@map("roles")
+}
+
+model Session {
+  id            String         @id @default(cuid())
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status        SessionStatus  @default(ACTIVE)
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime       @default(now())
+  expiresAt     DateTime
+  revokedAt     DateTime?
+  refreshTokens RefreshToken[]
+
+  @@map("sessions")
+}
+
+model RefreshToken {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId    String
+  session      Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  tokenHash    String    @unique
+  family       String
+  replacedById String?
+  revokedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  expiresAt    DateTime
+
+  @@map("refresh_tokens")
+}
+
+model EmailVerification {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime
+  verifiedAt DateTime?
+
+  @@map("email_verifications")
+}
+
+model PasswordReset {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  @@map("password_resets")
+}
+
+model LoginHistory {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  email     String
+  ipAddress String?
+  userAgent String?
+  success   Boolean
+  reason    String?
+  createdAt DateTime @default(now())
+
+  @@map("login_history")
+}
