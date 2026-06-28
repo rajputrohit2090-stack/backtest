@@ -16,11 +16,21 @@ python bridge.py
 
 If PowerShell blocks activation scripts, use CMD instead:
 
+This bridge now uses only the Python standard library, so FastAPI, Pydantic, Uvicorn, Rust, and Cargo are not required. From PowerShell, run these commands:
+
+```powershell
+cd C:\Users\hii\Desktop\backtest\apps\desktop-bridge
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python bridge.py
+```
+
+If PowerShell blocks activation scripts, use CMD instead:
+
 ```cmd
 cd C:\Users\hii\Desktop\backtest\apps\desktop-bridge
 py -m venv .venv
 .venv\Scripts\activate.bat
-python -m pip install -r requirements.txt
 python bridge.py
 ```
 
@@ -36,7 +46,7 @@ You can also double-click `start_bridge.bat`, or run one of these from `apps\des
 start_bridge.bat
 ```
 
-The helper creates `.venv`, installs `requirements.txt`, and starts the bridge.
+The helper creates `.venv` and starts the bridge. No Python package install is required.
 
 Bridge URL: `http://localhost:8787`
 

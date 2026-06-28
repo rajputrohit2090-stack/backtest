@@ -6,6 +6,4 @@ if (-not (Test-Path ".venv\Scripts\python.exe")) {
 }
 
 & ".\.venv\Scripts\Activate.ps1"
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
 python bridge.py
